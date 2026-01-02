@@ -32,10 +32,44 @@ st.markdown("""
     .stButton>button {width: 100%; border-radius: 8px; height: 3em; font-weight: bold;}
     
     #MainMenu {visibility: hidden;} footer {visibility: hidden;}
+
+    /* Style cho Logo PDF và chữ Rename ở Sidebar */
+    .sidebar-logo-container {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .sidebar-logo-text {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #D35400;
+        margin-top: 5px;
+    }
+
+    /* Style cho dòng chữ Created by... bự và sáng */
+    .credits-text {
+        text-align: center;
+        margin-top: 30px;
+        margin-bottom: 20px;
+        font-size: 1.6em; /* Chữ bự */
+        font-weight: 900;
+        color: #FF5722; /* Màu cam sáng rực */
+        text-shadow: 2px 2px 4px rgba(255, 87, 34, 0.4); /* Hiệu ứng phát sáng nhẹ */
+        letter-spacing: 1px;
+    }
+
+    /* Style cho các icon rải rác ở dưới cùng */
+    .scattered-icons {
+        display: flex;
+        justify-content: space-evenly;
+        font-size: 2.5em;
+        margin-top: 60px;
+        opacity: 0.5; /* Làm mờ nhẹ cho đỡ rối mắt */
+        filter: grayscale(30%);
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- LOGIC XỬ LÝ ---
+# --- LOGIC XỬ LÝ (GIỮ NGUYÊN) ---
 def get_best_model(api_key):
     genai.configure(api_key=api_key)
     try:
@@ -70,22 +104,13 @@ def process_custom_rule(uploaded_file, api_key, model_name, status_container):
         # --- QUY TẮC CHUẨN THEO FILE TXT (YYYY.MM.DD) ---
         prompt = """
         Trích xuất thông tin đặt tên file PDF theo đúng quy tắc sau:
-        
-        1. CẤU TRÚC CHUẨN: 
-           YYYY.MM.DD_LOAI_SoHieu_NoiDung_TrangThai.pdf
-        
-        2. GIẢI THÍCH CHI TIẾT:
-           - YYYY.MM.DD: Năm.Tháng.Ngày (Năm đủ 4 số, dùng dấu chấm). 
-             Ví dụ chuẩn: 2025.08.15
+        1. CẤU TRÚC CHUẨN: YYYY.MM.DD_LOAI_SoHieu_NoiDung_TrangThai.pdf
+        2. GIẢI THÍCH:
+           - YYYY.MM.DD: Năm.Tháng.Ngày (Năm đủ 4 số, dùng dấu chấm). Ví dụ: 2025.08.15
            - LOAI: Viết tắt (QD, TTr, CV, TB, GP, HD, BB, BC...).
            - SoHieu: Số hiệu (Ví dụ 125-UBND, thay / bằng -).
            - NoiDung: Tiếng Việt không dấu, nối bằng gạch dưới (_).
-           - TrangThai: Mặc định là 'Signed' (nếu đã ký).
-        
-        3. VÍ DỤ MẪU:
-           Input: Quyết định số 125/UBND ký ngày 15/08/2025.
-           Output: 2025.08.15_QD_125-UBND_Giao_dat_Dot1_Signed.pdf
-        
+           - TrangThai: Mặc định là 'Signed'.
         Chỉ trả về tên file duy nhất.
         """
         
@@ -118,24 +143,33 @@ def process_custom_rule(uploaded_file, api_key, model_name, status_container):
 
 # --- GIAO DIỆN NGƯỜI DÙNG ---
 with st.sidebar:
-    st.title("⚙️ CẤU HÌNH")
-    st.markdown("---")
+    # 1. THAY ĐỔI HEADER SIDEBAR (Logo PDF + Chữ Rename)
+    st.markdown("""
+        <div class="sidebar-logo-container">
+            <img src="https://cdn-icons-png.flaticon.com/512/4726/4726010.png" width="80">
+            <div class="sidebar-logo-text">Rename</div>
+        </div>
+        ---
+    """, unsafe_allow_html=True)
+    
     with st.expander("🔑 Google API Key", expanded=True):
         api_key = st.text_input("Nhập Key:", type="password")
     
-    st.info("ℹ️ Quy tắc: `YYYY.MM.DD`\n\nVD: `2025.08.15_QD...`")
+    # (Đã bỏ khung quy tắc ở đây)
+    
     st.markdown("---")
     
-    # --- ĐÓNG DẤU BẢN QUYỀN ---
+    # 2. CHỮ CREATED BY BỰ VÀ SÁNG
     st.markdown("""
-    <div style="text-align: center; margin-top: 20px; color: #555;">
-        <b>Created by Lê Hồng Sến</b>
+    <div class="credits-text">
+        Created by<br>Lê Hồng Sến
     </div>
     """, unsafe_allow_html=True)
 
 # --- PHẦN CHÍNH ---
 st.title("🛠️ Tool đổi tên file pdf - Thắng cầy")
-st.markdown("##### 🚀 Quy chuẩn: `YYYY.MM.DD_LOAI_SoHieu_NoiDung_Signed.pdf`")
+# 3. ĐỔI CHỮ QUY CHUẨN THÀNH QUY TẮC
+st.markdown("##### 🚀 Quy tắc: `YYYY.MM.DD_LOAI_SoHieu_NoiDung_Signed.pdf`")
 
 uploaded_files = st.file_uploader("", type=['pdf'], accept_multiple_files=True)
 
@@ -163,12 +197,10 @@ if uploaded_files:
                         st.error(f"❌ {uploaded_file.name}: {error_msg}")
                     else:
                         status_box.empty()
-                        # Lưu file để nén ZIP
                         uploaded_file.seek(0)
                         file_data = uploaded_file.read()
                         success_files.append((new_name, file_data))
                         
-                        # Hiện kết quả
                         col_info, col_dl = st.columns([3, 1])
                         with col_info:
                             st.markdown(f"""
@@ -189,7 +221,6 @@ if uploaded_files:
                             )
                 progress_bar.progress((i + 1) / len(uploaded_files))
             
-            # --- NÚT TẢI ZIP ---
             if success_files:
                 st.markdown("---")
                 st.success("🎉 Xong hàng! Tải về tại đây:")
@@ -207,3 +238,10 @@ if uploaded_files:
                     type="primary",
                     use_container_width=True
                 )
+
+# 4. THÊM ICON RẢI RÁC Ở DƯỚI CÙNG
+st.markdown("""
+<div class="scattered-icons">
+    <span>📑</span> <span>✨</span> <span>📂</span> <span>🚀</span> <span>🛠️</span> <span>🎉</span>
+</div>
+""", unsafe_allow_html=True)
